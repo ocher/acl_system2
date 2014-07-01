@@ -7,7 +7,6 @@ module Caboose
       subject.extend(ClassMethods)
       if subject.respond_to? :helper_method
         subject.helper_method(:permit?)
-        subject.helper_method(:restrict_to)
       end
     end
     
@@ -65,34 +64,26 @@ module Caboose
     end
 
     def permit?(logicstring, context = {})
-      access_handler.process(logicstring, access_context(context))
+      access_handler.process(logicstring.dup, access_context(context))
     end
-  
-    # restrict_to "admin | moderator" do
-    #   link_to "foo"
-    # end   
-    def restrict_to(logicstring, context = {})
-      return false if current_user.nil?
-      result = ''    
-      if permit?(logicstring, context) 
-        result = yield if block_given?
-      end 
-      result
-    end    
-      
+
     class AccessSentry
      
       def initialize(subject, actions={})
         @actions = actions.inject({}) do |auth, current|
           [current.first].flatten.each { |action| auth[action] = current.last }
           auth
-        end 
+        end
         @subject = subject
       end 
      
       def allowed?(action)
         if @actions.has_key? action.to_sym
-          return @subject.access_handler.process(@actions[action.to_sym].dup, @subject.access_context)
+          if @actions[action.to_sym].nil?         # used for removing DEFAULT behavior
+            return true
+          else
+            return @subject.access_handler.process(@actions[action.to_sym].dup, @subject.access_context)
+          end
         elsif @actions.has_key? :DEFAULT
           return @subject.access_handler.process(@actions[:DEFAULT].dup, @subject.access_context) 
         else
@@ -103,7 +94,21 @@ module Caboose
     end # AccessSentry
   
   end # AccessControl  
-  
+
+  module Helpers
+    # restrict_to "admin | moderator" do
+    #   link_to "foo"
+    # end
+    def restrict_to(logicstring, context = {}, &block)
+      return '' if current_user.nil?
+      result = ''
+      if permit?(logicstring, context)
+        result = capture(&block) if block_given?
+      end
+      result
+    end
+  end
+
 end # Caboose    
 
 

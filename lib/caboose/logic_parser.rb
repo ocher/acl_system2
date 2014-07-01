@@ -9,7 +9,7 @@ module Caboose
     def process(logicstring, context)
       # if logicstring contains any parenthasized patterns, call process recursively on them
       while logicstring =~ /\(/
-        logicstring.sub!(/\(([^\)]+)\)/) {
+        logicstring.sub!(/\((.+)\)/) {
           process($1, context)
         }
       end

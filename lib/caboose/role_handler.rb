@@ -12,7 +12,7 @@ module Caboose
   class RoleHandler < AccessHandler 
     
     def check(key, context)  
-      context[:user].roles.map{ |role| role.title.downcase}.include? key.downcase
+      context[:user].roles.pluck(:title).include? key.downcase
     end
         
   end # End RoleHandler

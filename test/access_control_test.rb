@@ -14,7 +14,13 @@ class User
   end
   
   def roles
-    [OpenStruct.new(:title => 'admin'), OpenStruct.new(:title => 'user')]
+    result = [OpenStruct.new(:title => 'admin'), OpenStruct.new(:title => 'user')]
+    class << result
+      def pluck(attr)
+        map {|x| x.send(attr)}
+      end
+    end
+    result
   end  
 
 end      
@@ -36,8 +42,13 @@ class ControllerProxy
   def before_action
     self.class.before_block.call(self)
   end
+
+  def capture(&block)
+    block.call
+  end
     
   include Caboose::AccessControl
+  include Caboose::Helpers
   
   access_control([:create, :edit] => 'admin & !blacklist',
       :update => '(admin | moderator) & !blacklist',
@@ -112,7 +123,7 @@ class AccessControlTest  < Test::Unit::TestCase
   
   def test_permit
     context = { :user => User.new }
-    controller = ControllerProxy.new   
+    controller = ControllerProxy.new
     assert controller.permit?("(admin | moderator) & !blacklist", context)  
     assert controller.permit?("(user | moderator) & !blacklist", context)  
     assert controller.permit?("(user | moderator | user) & !blacklist", context)  
@@ -124,6 +135,15 @@ class AccessControlTest  < Test::Unit::TestCase
     assert_equal controller.permit?("!admin | blacklist", context), false 
     assert_equal controller.permit?("moderator", context), false 
     assert_equal controller.permit?("!anon & !moderator", context), true     
+  end
+
+  def test_permit_not_changes_query_string
+    context = { :user => User.new }
+    controller = ControllerProxy.new
+    query = "(admin | moderator) & !blacklist"
+    assert controller.permit?(query, context)
+
+    assert_equal("(admin | moderator) & !blacklist", query)
   end
   
   def test_restrict_to
@@ -137,7 +157,7 @@ class AccessControlTest  < Test::Unit::TestCase
   
   def test_before_filter
     context = { :user => User.new }
-    controller = ControllerProxy.new 
+    controller = ControllerProxy.new
     
     controller.action_name = 'list'
     assert_block { controller.before_action }
@@ -151,12 +171,12 @@ class AccessControlTest  < Test::Unit::TestCase
  
   def test_set_default_context_with_block
     context = { :user => User.new }
-    controller = ControllerProxy.new 
+    controller = ControllerProxy.new
     controller.action_name = 'list'
     controller.before_action
     assert controller.access_context.include?(:user)
     assert controller.access_context.include?(:variable)
     assert controller.access_context.include?(:login_time)
   end
-    
-end  
+end
+
