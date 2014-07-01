@@ -17,4 +17,17 @@ module Caboose
         
   end # End RoleHandler
 
+  # Usage:
+  #  def retrieve_access_handler
+  #    Caboose::VirtualRoleHandler.new(self)
+  #  end
+  class VirtualRoleHandler < RoleHandler
+    def initialize(controller)
+      @controller = controller
+    end
+
+    def check(key, context)
+      super || (@controller.respond_to?(key.to_sym) && @controller.send(key.to_sym))
+    end
+  end
 end

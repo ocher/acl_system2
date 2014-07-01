@@ -88,6 +88,20 @@ class ControllerProxyWithFabHandler < ControllerProxy
   
 end
 
+class ControllerProxyWithVirtualRoles < ControllerProxy
+  def retrieve_access_handler
+    Caboose::VirtualRoleHandler.new(self)
+  end
+
+  def virtual_role_true
+    true
+  end
+
+  def virtual_role_false
+    false
+  end
+end
+
 
 # tests         
 class AccessControlTest  < Test::Unit::TestCase
@@ -119,6 +133,17 @@ class AccessControlTest  < Test::Unit::TestCase
    
     context[:user].name = 'Fabien'
     assert controller.permit?("(admin | moderator) & !blacklist", context)     
+  end
+
+  def test_virtual_role_handler
+    context = { :user => User.new }
+    controller = ControllerProxyWithVirtualRoles.new
+    assert_equal true, controller.permit?('virtual_role_true')
+    assert_equal false, controller.permit?('virtual_role_false')
+
+    # test regular roles with virtual roles
+    assert_equal true, controller.permit?('virtual_role_false | admin')
+    assert_equal false, controller.permit?('virtual_role_false & admin')
   end
   
   def test_permit
