@@ -25,9 +25,9 @@ module Caboose
           c.default_access_context = defaults if default_block_given
           @access = AccessSentry.new(c, actions)
           if @access.allowed?(c.action_name)
-             c.send(:permission_granted)  if c.respond_to?:permission_granted
+             c.send(:permission_granted)  if c.respond_to?(:permission_granted, true)
           else    
-            if c.respond_to?:permission_denied
+            if c.respond_to?(:permission_denied, true)
               c.send(:permission_denied)
             else  
               c.send(:render, :text => "You have insuffient permissions to access #{c.controller_name}/#{c.action_name}")
@@ -40,7 +40,7 @@ module Caboose
     # return the active access handler, fallback to RoleHandler
     # implement #retrieve_access_handler to return non-default handler
     def access_handler
-      if respond_to?(:retrieve_access_handler)
+      if respond_to?(:retrieve_access_handler, true)
         @handler ||= retrieve_access_handler
       else
         @handler ||= RoleHandler.new
@@ -55,7 +55,7 @@ module Caboose
 
     def default_access_context
       @default_access_context ||= {}
-      @default_access_context[:user] = send(:current_user) if respond_to?(:current_user)
+      @default_access_context[:user] = send(:current_user) if respond_to?(:current_user, true)
       @default_access_context 
     end
 

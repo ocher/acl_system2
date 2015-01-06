@@ -93,6 +93,8 @@ class ControllerProxyWithVirtualRoles < ControllerProxy
     Caboose::VirtualRoleHandler.new(self)
   end
 
+  protected
+
   def virtual_role_true
     true
   end

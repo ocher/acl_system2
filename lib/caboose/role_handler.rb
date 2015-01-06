@@ -27,7 +27,7 @@ module Caboose
     end
 
     def check(key, context)
-      super || (@controller.respond_to?(key.to_sym) && @controller.send(key.to_sym))
+      super || (@controller.respond_to?(key.to_sym, true) && @controller.send(key.to_sym))
     end
   end
 end
